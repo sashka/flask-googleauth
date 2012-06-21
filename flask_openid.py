@@ -203,9 +203,7 @@ class GoogleAuth(OpenIdMixin):
 
     def __init__(self, app, install=True, url_prefix=None, name="GoogleAuth"):
         self.app = app
-
         self.blueprint = Blueprint(name, __name__, url_prefix=url_prefix)
-
         if install:
             self.install()
 
