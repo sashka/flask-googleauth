@@ -7,11 +7,9 @@ Inspired by Kenneth Reitz.
 
 Usage
 -----
-Example usage for Google Federated Login.
+Example usage for Google Federated Login. Greate for internal apps.
 
-Require an account from a given Google Apps domain for your Flask apps.
-
-Greate for internal apps. ::
+Require an account from a given Google Apps domain for your Flask apps::
 
     from flask import Flask
     from flask_googleauth import GoogleFederated
