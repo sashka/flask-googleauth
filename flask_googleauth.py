@@ -7,7 +7,7 @@ This is a partial port of tornado.auth to be used with Flask.
 Example usage for Google Federated Login:
 
     from flask import Flask
-    from flask_openid import GoogleFederated
+    from flask_googleauth import GoogleFederated
 
     # Setup Flask
     app = Flask(__name__)
