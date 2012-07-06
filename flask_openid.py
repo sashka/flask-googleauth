@@ -22,12 +22,13 @@ Example usage for Google Federated Login:
         return "ssssshhhhh (c) kennethreitz"
 """
 
+import functools
 import logging
-import requests
 import urllib
 import urlparse
 
-from functools import wraps
+import requests
+
 from flask import Blueprint, request, session, redirect, url_for, abort, g
 
 
@@ -70,8 +71,7 @@ class OpenIdMixin(object):
         """
         callback_uri = callback_uri or request.url
         args = self._openid_args(callback_uri, ax_attrs=ask_for)
-        separator = "&" if "?" in self._OPENID_ENDPOINT else "?"
-        return redirect(self._OPENID_ENDPOINT + separator + urllib.urlencode(args))
+        return redirect(self._OPENID_ENDPOINT + ("&" if "?" in self._OPENID_ENDPOINT else "?") + urllib.urlencode(args))
 
     def get_authenticated_user(self, callback):
         """Fetches the authenticated user data upon redirect.
@@ -132,7 +132,7 @@ class OpenIdMixin(object):
 
         # Make sure we got back at least an email from attribute exchange
         ax_ns = None
-        for name in request.args.keys():
+        for name in request.args:
             if name.startswith("openid.ns.") and request.args.get(name) == u"http://openid.net/srv/ax/1.0":
                 ax_ns = name[10:]
                 break
@@ -140,12 +140,12 @@ class OpenIdMixin(object):
         def get_ax_arg(uri):
             if not ax_ns:
                 return u""
-            prefix = "openid." + ax_ns + ".type."
+            prefix = "openid.%s.type." % ax_ns
             ax_name = None
-            for name in request.args.keys():
+            for name in request.args:
                 if request.args.get(name) == uri and name.startswith(prefix):
                     part = name[len(prefix):]
-                    ax_name = "openid." + ax_ns + ".value." + part
+                    ax_name = "openid.%s.value.%s" % (ax_ns, part)
                     break
             if not ax_name:
                 return u""
@@ -249,13 +249,13 @@ class GoogleAuth(OpenIdMixin):
     def _check_auth(self):
         return "openid" in session
 
-    def required(self, f):
+    def required(self, fn):
         """Request decorator. Forces authentication."""
-        @wraps(f)
+        @functools.wraps(fn)
         def decorated(*args, **kwargs):
             if not self._check_auth():
                 return redirect(url_for("%s.login" % self.blueprint.name, next=request.url))
-            return f(*args, **kwargs)
+            return fn(*args, **kwargs)
         return decorated
 
 
