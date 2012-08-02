@@ -12,7 +12,7 @@ Example usage for Google Federated Login. Greate for internal apps.
 Require an account from a given Google Apps domain for your Flask apps::
 
     from flask import Flask
-    from flask_googleauth import GoogleFederated
+    from flask.ext.googleauth import GoogleFederated
 
     # Setup Flask
     app = Flask(__name__)
