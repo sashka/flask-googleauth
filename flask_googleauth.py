@@ -14,7 +14,7 @@ Example usage for Google Federated Login:
     app.secret_key = "random secret key"
 
     # Setup Google Auth
-    auth = GoogleFederated(app, "mokote.com")
+    auth = GoogleFederated("mokote.com", app)
 
     @app.route("/")
     @auth.required
@@ -27,9 +27,16 @@ import logging
 import urllib
 import urlparse
 
+import blinker
 import requests
 
-from flask import Blueprint, request, session, redirect, url_for, abort, g
+from flask import Blueprint, request, session, redirect, url_for, abort, g, current_app
+
+
+signals = blinker.Namespace()
+login = signals.signal("login")
+logout = signals.signal("logout")
+login_error = signals.signal("login-error")
 
 
 class ObjectDict(dict):
@@ -201,24 +208,25 @@ class GoogleAuth(OpenIdMixin):
 
     _OPENID_ENDPOINT = "https://www.google.com/accounts/o8/ud"
 
-    def __init__(self, app, install=True, url_prefix=None, name="GoogleAuth"):
+    def __init__(self, app=None, url_prefix=None, name="GoogleAuth"):
         self.app = app
-        self.blueprint = Blueprint(name, __name__, url_prefix=url_prefix)
-        if install:
-            self.install()
+        self.url_prefix = url_prefix
+        self.name = name
 
-    def install(self):
-        """Installs the Blueprint into the app."""
-        self.app.before_request(self._before_request)
-        self._configure_routes()
-        self._register_blueprint()
+        if app:
+            self.init_app(app, url_prefix, name)
 
-    def _configure_routes(self):
-        self.blueprint.add_url_rule("/login/", "login", self._login, methods=["GET", "POST"])
-        self.blueprint.add_url_rule("/logout/", "logout", self._logout, methods=["GET", "POST"])
+    def init_app(self, app, url_prefix=None, name=None):
+        url_prefix = url_prefix or self.url_prefix
+        name = name or self.name
 
-    def _register_blueprint(self, **kwargs):
-        self.app.register_blueprint(self.blueprint, **kwargs)
+        blueprint = Blueprint(name, __name__, url_prefix=url_prefix)
+        blueprint.add_url_rule("/login/", "login", self._login, methods=["GET", "POST"])
+        blueprint.add_url_rule("/logout/", "logout", self._logout, methods=["GET", "POST"])
+
+        app.register_blueprint(blueprint)
+        app.before_request(self._before_request)
+        app.extensions['googleauth'] = ObjectDict(blueprint=blueprint)
 
     def _before_request(self):
         g.user = None
@@ -236,14 +244,19 @@ class GoogleAuth(OpenIdMixin):
         This is called when login with OpenID succeeded and it's not
         necessary to figure out if this is the users's first login or not.
         """
+        app = current_app._get_current_object()
         if not user:
             # Google auth failed.
+            login_error.send(app, user=None)
             abort(403)
         session["openid"] = user
+        login.send(app, user=user)
         return redirect(request.args.get("next", None) or request.referrer or "/")
 
     def _logout(self):
-        session.pop("openid", None)
+        user = session.pop("openid", None)
+        app = current_app._get_current_object()
+        logout.send(app, user=user)
         return redirect(request.args.get("next", None) or "/")
 
     def _check_auth(self):
@@ -254,7 +267,8 @@ class GoogleAuth(OpenIdMixin):
         @functools.wraps(fn)
         def decorated(*args, **kwargs):
             if not self._check_auth():
-                return redirect(url_for("%s.login" % self.blueprint.name, next=request.url))
+                blueprint = current_app.extensions['googleauth'].blueprint
+                return redirect(url_for("%s.login" % blueprint.name, next=request.url))
             return fn(*args, **kwargs)
         return decorated
 
@@ -264,6 +278,7 @@ class GoogleFederated(GoogleAuth):
     Super simple Google Federated Auth for a given domain.
     """
 
-    def __init__(self, app, domain, install=True, url_prefix=None):
+    def __init__(self, domain, app=None, url_prefix=None, name='GoogleAuth'):
         self._OPENID_ENDPOINT = "https://www.google.com/a/%s/o8/ud?be=o8" % domain
-        super(GoogleFederated, self).__init__(app, install, url_prefix)
+        super(GoogleFederated, self).__init__(app, url_prefix, name)
+
