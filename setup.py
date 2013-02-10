@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='Flask-GoogleAuth',
-    version='0.2',
+    version='0.3',
     url='https://github.com/sashka/flask-googleauth',
     license='BSD',
     author='Alexander Saltanov',
@@ -15,7 +15,7 @@ setup(
     zip_safe=False,
     include_package_data=True,
     platforms='any',
-    install_requires=['Flask', 'requests'],
+    install_requires=['Flask', 'requests', 'blinker'],
     classifiers=[
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
