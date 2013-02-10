@@ -9,6 +9,8 @@ Usage
 -----
 Example usage for Google Federated Login. Greate for internal apps.
 
+Routes ``/login/`` and ``/logout/`` will be provided automagically.
+
 Require an account from a given Google Apps domain for your Flask apps::
 
     from flask import Flask, g
