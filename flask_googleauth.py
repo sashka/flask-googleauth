@@ -90,9 +90,8 @@ class OpenIdMixin(object):
         # Verify the OpenID response via direct request to the OP
         args = dict((k, v) for k, v in request.args.items())
         args["openid.mode"] = u"check_authentication"
-        url = request.args.get("openid.op_endpoint", self._OPENID_ENDPOINT)
 
-        r = requests.post(url, data=args)
+        r = requests.post(self._OPENID_ENDPOINT, data=args)
         return self._on_authentication_verified(callback, r)
 
     def _openid_args(self, callback_uri, ax_attrs=[]):
@@ -281,4 +280,3 @@ class GoogleFederated(GoogleAuth):
     def __init__(self, domain, app=None, url_prefix=None, name='GoogleAuth'):
         self._OPENID_ENDPOINT = "https://www.google.com/a/%s/o8/ud?be=o8" % domain
         super(GoogleFederated, self).__init__(app, url_prefix, name)
-
