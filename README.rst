@@ -1,13 +1,15 @@
 Flask-GoogleAuth
 ================
 This is a partial port of torando.auth to be used with Flask.
+It is small, self contained and do not use any filesystem operations.
+Greate for internal apps.
 
 Written by Alexander Saltanov, inspired by Kenneth Reitz.
 
 
 Usage
 -----
-Example usage for Google Federated Login. Greate for internal apps.
+Example usage for Google Federated Login.
 
 Routes ``/login/`` and ``/logout/`` will be provided automagically.
 
