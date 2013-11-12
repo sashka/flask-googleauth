@@ -267,7 +267,12 @@ class GoogleAuth(OpenIdMixin):
         def decorated(*args, **kwargs):
             if not self._check_auth():
                 blueprint = current_app.extensions['googleauth'].blueprint
-                return redirect(url_for("%s.login" % blueprint.name, next=request.url))
+                # Don't try to force authentication if the request is part
+                # of the authentication process - otherwise we end up in a
+                # loop.
+                if request.blueprint != blueprint.name:
+                    return redirect(url_for("%s.login" % blueprint.name,
+                                            next=request.url))
             return fn(*args, **kwargs)
         return decorated
 
