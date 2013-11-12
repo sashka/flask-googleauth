@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='Flask-GoogleAuth',
-    version='0.4.lft.1',
+    version='0.4',
     url='https://github.com/sashka/flask-googleauth',
     license='BSD',
     author='Alexander Saltanov',
