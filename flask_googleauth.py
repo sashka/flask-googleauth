@@ -208,7 +208,7 @@ class GoogleAuth(OpenIdMixin):
     _OPENID_ENDPOINT = "https://www.google.com/accounts/o8/ud"
 
     def __init__(self, app=None, url_prefix=None, name="GoogleAuth",
-                 force_auth_on_every_request = False):
+                 force_auth_on_every_request=False):
         self.app = app
         self.url_prefix = url_prefix
         self.name = name
