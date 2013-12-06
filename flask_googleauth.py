@@ -64,7 +64,8 @@ class OpenIdMixin(object):
     See GoogleAuth below for example implementations.
     """
 
-    def authenticate_redirect(self, callback_uri=None, ask_for=["name", "email", "language", "username"]):
+    def authenticate_redirect(self, callback_uri=None,
+                              ask_for=["name", "email", "language", "username"]):
         """
         Performs a redirect to the authentication URL for this service.
 
@@ -78,7 +79,9 @@ class OpenIdMixin(object):
         """
         callback_uri = callback_uri or request.url
         args = self._openid_args(callback_uri, ax_attrs=ask_for)
-        return redirect(self._OPENID_ENDPOINT + ("&" if "?" in self._OPENID_ENDPOINT else "?") + urllib.urlencode(args))
+        return redirect(self._OPENID_ENDPOINT +
+                        ("&" if "?" in self._OPENID_ENDPOINT else "?") +
+                        urllib.urlencode(args))
 
     def get_authenticated_user(self, callback):
         """Fetches the authenticated user data upon redirect.
@@ -139,7 +142,8 @@ class OpenIdMixin(object):
         # Make sure we got back at least an email from attribute exchange
         ax_ns = None
         for name in request.args:
-            if name.startswith("openid.ns.") and request.args.get(name) == u"http://openid.net/srv/ax/1.0":
+            if (name.startswith("openid.ns.") and
+               request.args.get(name) == u"http://openid.net/srv/ax/1.0"):
                 ax_ns = name[10:]
                 break
 
@@ -207,10 +211,12 @@ class GoogleAuth(OpenIdMixin):
 
     _OPENID_ENDPOINT = "https://www.google.com/accounts/o8/ud"
 
-    def __init__(self, app=None, url_prefix=None, name="GoogleAuth"):
+    def __init__(self, app=None, url_prefix=None, name="GoogleAuth",
+                 force_auth_on_every_request=False):
         self.app = app
         self.url_prefix = url_prefix
         self.name = name
+        self.force_auth_on_every_request = force_auth_on_every_request
 
         if app:
             self.init_app(app, url_prefix, name)
@@ -219,18 +225,40 @@ class GoogleAuth(OpenIdMixin):
         url_prefix = url_prefix or self.url_prefix
         name = name or self.name
 
-        blueprint = Blueprint(name, __name__, url_prefix=url_prefix)
-        blueprint.add_url_rule("/login/", "login", self._login, methods=["GET", "POST"])
-        blueprint.add_url_rule("/logout/", "logout", self._logout, methods=["GET", "POST"])
+        self.blueprint = Blueprint(name, __name__, url_prefix=url_prefix)
+        self.blueprint.add_url_rule("/login/",
+                                    "login",
+                                    self._login,
+                                    methods=["GET", "POST"])
+        self.blueprint.add_url_rule("/logout/",
+                                    "logout",
+                                    self._logout,
+                                    methods=["GET", "POST"])
 
-        app.register_blueprint(blueprint)
-        app.before_request(self._before_request)
-        app.extensions['googleauth'] = ObjectDict(blueprint=blueprint)
+        app.register_blueprint(self.blueprint)
+        app.before_request(self._add_user_from_session)
+        app.before_request(self._force_auth_on_every_request)
+        app.extensions['googleauth'] = ObjectDict(blueprint=self.blueprint)
 
-    def _before_request(self):
+    def _add_user_from_session(self):
         g.user = None
         if "openid" in session:
             g.user = session["openid"]
+
+    def _force_auth_on_every_request(self):
+        if self.force_auth_on_every_request:
+            # Use the required decorator where the actual work for
+            # authentication is performed.
+            # The goal here is to avoid code duplication.
+            @self.required
+            def _should_auth():
+                # If no authentication is required, return None so that
+                # the request dispatch process continues.
+                return None
+            # The required decorator will replace the return value with
+            # a redirect if authentication is needed, thus stopping the dispatch
+            # process.
+            return _should_auth()
 
     def _login(self):
         if request.args.get("openid.mode", None):
@@ -265,9 +293,13 @@ class GoogleAuth(OpenIdMixin):
         """Request decorator. Forces authentication."""
         @functools.wraps(fn)
         def decorated(*args, **kwargs):
-            if not self._check_auth():
-                blueprint = current_app.extensions['googleauth'].blueprint
-                return redirect(url_for("%s.login" % blueprint.name, next=request.url))
+            if (not self._check_auth()
+               # Don't try to force authentication if the request is part
+               # of the authentication process - otherwise we end up in a
+               # loop.
+               and request.blueprint != self.blueprint.name):
+                return redirect(url_for("%s.login" % self.blueprint.name,
+                                        next=request.url))
             return fn(*args, **kwargs)
         return decorated
 

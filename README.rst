@@ -39,6 +39,9 @@ If you want to authenticate your users with general Google OpenID you should imp
 
     auth = GoogleAuth(app)
 
+You can force all requests to be authenticated by setting ``force_auth_on_every_request`` on the auth object::
+
+    auth.force_auth_on_every_request = True
 
 Install
 -------
