@@ -31,7 +31,7 @@ Require an account from a given Google Apps domain for your Flask apps::
     def secret():
         # Once user is authenticated, his name and email are accessible as
         # g.user.name and g.user.email.
-        return "You have rights to be here, %s (%s)" % (g.user.name, g.user.email)
+        return "You have rights to be here, %s (%s)" % (g.user['name'], g.user['email'])
 
     app.run()
 
