@@ -7,6 +7,8 @@ Greate for internal apps.
 
 Written by Alexander Saltanov, inspired by Kenneth Reitz.
 
+You can buy me a cup of coffee or a glass of wine. Bitcoin could be sent to ``1Boahzk5jMTebqiKVESzbnVWTvBTGnAvYf``
+
 
 Usage
 -----
