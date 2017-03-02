@@ -10,48 +10,8 @@ Written by Alexander Saltanov, inspired by Kenneth Reitz.
 You can buy me a cup of coffee or a glass of wine. Bitcoin could be sent to ``1Boahzk5jMTebqiKVESzbnVWTvBTGnAvYf``
 
 
-Usage
------
-Example usage for Google Federated Login.
-
-Routes ``/login/`` and ``/logout/`` will be provided automagically.
-
-Require an account from a given Google Apps domain for your Flask apps::
-
-    from flask import Flask, g
-    from flask_googleauth import GoogleFederated
-
-    # Setup Flask
-    app = Flask(__name__)
-    app.secret_key = "random secret key"
-
-    # Setup Google Federated Auth
-    auth = GoogleFederated("mokote.com", app)
-
-    @app.route("/")
-    @auth.required
-    def secret():
-        # Once user is authenticated, his name and email are accessible as
-        # g.user.name and g.user.email.
-        return "You have rights to be here, %s (%s)" % (g.user['name'], g.user['email'])
-
-    app.run()
-
-If you want to authenticate your users with general Google OpenID you should import and use ``GoogleAuth`` instead of ``GoogleFederated``::
-
-    auth = GoogleAuth(app)
-
-You can force all requests to be authenticated by setting ``force_auth_on_every_request`` on the auth object::
-
-    auth.force_auth_on_every_request = True
-
-Install
+Warning
 -------
-To install Flask-GoogleAuth::
+I no longer use Flask and almost don't use Python, so I don't really know whether this code still relevant or not.
 
-    pip install flask-googleauth
-
-
-Prerequisites
--------------
-Be sure that your Google Apps domain is enabled to be an OpenID provider under "Advanced tools" → "Federated Login using OpenID".
+This repository to be removed completely on December 2017.
